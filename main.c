@@ -3,7 +3,7 @@
 
 const int BMP_FILE_SIZE = 90122;
 
-unsigned char *encode128(unsigned char *dest_bitmap, int bar_width, char *text);
+int encode128(unsigned char *dest_bitmap, int bar_width, char *text);
 // dest_bitmap - pointer to generated image (header and pixel data)
 // bar_width - the width of the narrowest bar in pixels
 // text – text to be encoded
@@ -14,8 +14,8 @@ unsigned char *encode128(unsigned char *dest_bitmap, int bar_width, char *text);
 int main(int argc, char *argv[]) {
     unsigned char *dest_bitmap = (unsigned char *)calloc(BMP_FILE_SIZE, sizeof(unsigned char));
     int narrowest_bar_width = 1;
-    char text_to_encode[40] = "213700000000";
-    unsigned char *res = encode128(dest_bitmap, narrowest_bar_width, text_to_encode);
+    char text_to_encode[40] = "213700";
+    int res = encode128(dest_bitmap, narrowest_bar_width, text_to_encode);
     printf("Digits: \n");
     printf("%d \n", res);
     // printf("%d \n", *(res+1));
