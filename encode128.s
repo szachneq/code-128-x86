@@ -187,7 +187,17 @@ parse_loop:
     jmp     fin
 
 end_parse_loop:
-    movzx   eax, byte [values+1] ; Return without errors
+
+
+
+
+    ; movzx   eax, byte [values+1] ; Return without errors
+    mov     eax, 0 ; Return without errors
+
+    push    STOP_SYMBOL
+    call    decode_symbol
+    add     esp, 4
+    movzx   eax, byte [print_buffer+6]
 
 fin:
     pop     edi
@@ -230,6 +240,17 @@ decode_loop:
     inc     ebx
     jmp     decode_loop
 end_decode_loop:
+
+    mov     [print_buffer+6], byte 0
+
+    cmp     [ebp+8], dword STOP_SYMBOL
+    jne     decode_symbol_fin
+
+stop_code:
+    mov     esi, ebx
+    add     esi, ecx
+    movzx   edx, byte [patterns+esi]
+    mov     [print_buffer+ebx], dl
 
 decode_symbol_fin:
     pop     edi
