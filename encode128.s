@@ -205,10 +205,22 @@ end_parse_loop:
     ; add     esp, 4
     ; movzx   eax, byte [print_buffer+6]
 
+    ; push    dword [ebp+8]
+    ; push    5
+    ; push    5
+    ; call    set_pixel
+    ; add     esp, 12
+
+    ; push    dword [ebp+8]
+    ; push    5
+    ; call    draw_line
+    ; add     esp, 8
+
+; void draw_bar(int x, int width, unsigned char *dest_bitmap)
     push    dword [ebp+8]
-    push    5
-    push    5
-    call    set_pixel
+    push    50
+    push    100
+    call    draw_bar
     add     esp, 12
     
     mov     eax, 0 ; Return without errors
@@ -277,6 +289,85 @@ decode_symbol_fin:
 
     ret
 
+
+
+; void draw_bar(int x, int width, unsigned char *dest_bitmap)
+draw_bar:
+    push    ebp
+    mov     ebp, esp
+
+    push    ebx
+    push    ecx
+    push    edx
+    push    esi
+    push    edi
+draw_bar_main:
+    mov     ecx, 0       ; loop counter
+    mov     esi, [ebp+8] ; x position
+draw_bar_loop:
+; void draw_line(int x, unsigned char *dest_bitmap)
+    cmp     ecx, [ebp+12]      ; while (counter < width)
+    ja      end_draw_bar_loop
+    push    dword [ebp+16] ; *dest_bitmap
+    push    esi  ; x position
+    call    draw_line
+    add     esp, 8
+
+    inc     esi
+    inc     ecx
+    jmp     draw_bar_loop
+end_draw_bar_loop:
+draw_bar_fin:
+    pop     edi
+    pop     esi
+    pop     edx
+    pop     ecx
+    pop     ebx
+
+    pop     ebp
+
+    ret
+
+
+
+; void draw_line(int x, unsigned char *dest_bitmap)
+draw_line:
+    push    ebp
+    mov     ebp, esp
+
+    push    ebx
+    push    ecx
+    push    edx
+    push    esi
+    push    edi
+draw_line_main:
+    mov     ecx, 5       ; loop counter (start at y=5)
+draw_line_loop:
+    cmp     ecx, 45      ; go up to y=45
+    ja      end_draw_line_loop
+    push    dword [ebp+12] ; *dest_bitmap
+    push    ecx            ; y position
+    push    dword [ebp+8]  ; x position
+    call    set_pixel
+    add     esp, 12
+
+    inc     ecx
+    jmp     draw_line_loop
+end_draw_line_loop:
+
+draw_line_fin:
+    pop     edi
+    pop     esi
+    pop     edx
+    pop     ecx
+    pop     ebx
+
+    pop     ebp
+
+    ret
+
+
+
 ; void set_pixel(int x, int y, unsigned char *dest_bitmap)
 set_pixel:
     push    ebp
@@ -288,11 +379,11 @@ set_pixel:
     push    esi
     push    edi
 set_pixel_main:
-    mov     edx, [ebp+8] ; x
+    mov     edx, [ebp+8] ; x position
     imul    edx, BYTES_PER_PIXEL
 
     mov     ebx, WIDTH
-    mov     ecx, [ebp+12] ; y
+    mov     ecx, [ebp+12] ; y position
     imul    ebx, BYTES_PER_PIXEL
     imul    ebx, ecx
 
@@ -317,27 +408,3 @@ set_pixel_fin:
     pop     ebp
 
     ret
-
-; set_pixel:
-;     ; (pointer, x, y, color)
-;     ; works only if we are using header from the start (without offset 54)
-
-;     mov     ebx, [eax + 18]      ;width of image (600)
-;     mov     ecx, esi             ;coordinate y
-
-;     imul    ebx, 3              
-;     imul    ebx, ecx
-
-;     mov     edx, edi             ;coordinate x
-;     imul    edx, 3
-;     add     ebx, edx            ;ebx = ebx + edx
-
-;     add     ebx, eax            ;adding pointer do the beginning of the image
-;     add     ebx, 54             ;adding offset 54
-
-;     mov     edx, 0x00000000     ;0x00RRGGBB
-;     mov     [ebx], dx
-;     shr     edx, 16             ;0x000000RR
-;     mov     [ebx + 2], dl
-
-;     jmp exit_set_pixel
