@@ -1,12 +1,23 @@
+; #-----------------------------------------------#
+; # author: Jan Szachno, 310982                   #
+; # semester: 22Z                                 #
+; # project: Code 128 - barcode generation, set C #
+; #-----------------------------------------------#
+
         section .data ; This data is initialized, but can be modified.
     ; test:   times 4 db 0xab
     ERROR_INVALID_INPUT: equ 1
 
-    MAX_NUM_VALUES:     equ 200
+    WIDTH:              equ 600
+    HEIGHT:             equ 50
+    BYTES_PER_PIXEL:    equ 3
+    HEADER_SIZE:        equ 54
+
+    MAX_NUM_VALUES:     equ 21
     ASCII_DIGIT_OFFSET: equ 48
     START_SYMBOL:       equ 105
     STOP_SYMBOL:        equ 106
-    BYTES_PER_CODE:    equ 6
+    BYTES_PER_CODE:     equ 6
     ; Accessing particular pattern digit:
     ; address = index * BYTES_PER_CODE * 4 + position * 4
     patterns:
@@ -188,16 +199,19 @@ parse_loop:
 
 end_parse_loop:
 
+    ; example use of decode_symbol
+    ; push    STOP_SYMBOL
+    ; call    decode_symbol
+    ; add     esp, 4
+    ; movzx   eax, byte [print_buffer+6]
 
-
-
-    ; movzx   eax, byte [values+1] ; Return without errors
+    push    dword [ebp+8]
+    push    5
+    push    5
+    call    set_pixel
+    add     esp, 12
+    
     mov     eax, 0 ; Return without errors
-
-    push    STOP_SYMBOL
-    call    decode_symbol
-    add     esp, 4
-    movzx   eax, byte [print_buffer+6]
 
 fin:
     pop     edi
@@ -223,7 +237,7 @@ decode_symbol:
     push    edi
 decode_symbol_main:
     ; calculate where in memory the decoded pattern is stored
-    ; address = symbol * NUM_DD_PER_CODE + position
+    ; address = symbol * BYTES_PER_CODE + position
     mov     eax, [ebp+8]
     mov     edi, BYTES_PER_CODE
     mul     edi
@@ -262,3 +276,68 @@ decode_symbol_fin:
     pop     ebp
 
     ret
+
+; void set_pixel(int x, int y, unsigned char *dest_bitmap)
+set_pixel:
+    push    ebp
+    mov     ebp, esp
+
+    push    ebx
+    push    ecx
+    push    edx
+    push    esi
+    push    edi
+set_pixel_main:
+    mov     edx, [ebp+8] ; x
+    imul    edx, BYTES_PER_PIXEL
+
+    mov     ebx, WIDTH
+    mov     ecx, [ebp+12] ; y
+    imul    ebx, BYTES_PER_PIXEL
+    imul    ebx, ecx
+
+    add     ebx, edx
+
+    mov     eax, [ebp+16]
+    add     ebx, eax
+    add     ebx, HEADER_SIZE
+
+    mov     edx, 0x00000000 ; 0x00RRGGBB
+    mov     [ebx], dx
+    shr     edx, 16         ; 0x000000RR
+    mov     [ebx + 2], dl
+
+set_pixel_fin:
+    pop     edi
+    pop     esi
+    pop     edx
+    pop     ecx
+    pop     ebx
+
+    pop     ebp
+
+    ret
+
+; set_pixel:
+;     ; (pointer, x, y, color)
+;     ; works only if we are using header from the start (without offset 54)
+
+;     mov     ebx, [eax + 18]      ;width of image (600)
+;     mov     ecx, esi             ;coordinate y
+
+;     imul    ebx, 3              
+;     imul    ebx, ecx
+
+;     mov     edx, edi             ;coordinate x
+;     imul    edx, 3
+;     add     ebx, edx            ;ebx = ebx + edx
+
+;     add     ebx, eax            ;adding pointer do the beginning of the image
+;     add     ebx, 54             ;adding offset 54
+
+;     mov     edx, 0x00000000     ;0x00RRGGBB
+;     mov     [ebx], dx
+;     shr     edx, 16             ;0x000000RR
+;     mov     [ebx + 2], dl
+
+;     jmp exit_set_pixel

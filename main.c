@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-const int BMP_FILE_SIZE = 90122;
+const int WIDTH = 600;
+const int HEIGHT = 50;
+const int BYTES_PER_PIXEL = 3;
+const int IMAGE_SIZE = WIDTH * HEIGHT * BYTES_PER_PIXEL;
+const int HEADER_OFFSET = 54;
+const int BMP_FILE_SIZE = IMAGE_SIZE + HEADER_OFFSET;
 
 int encode128(unsigned char *dest_bitmap, int bar_width, char *text);
 // dest_bitmap - pointer to generated image (header and pixel data)
@@ -11,16 +17,36 @@ int encode128(unsigned char *dest_bitmap, int bar_width, char *text);
 // (e.g. barcode does not fit in bitmap of given size, text contains characters
 // which can not be encoded).
 
-int main(int argc, char *argv[]) {
+int main() {
     unsigned char *dest_bitmap = (unsigned char *)calloc(BMP_FILE_SIZE, sizeof(unsigned char));
+
+    // BMP File header
+    // strcpy(dest_bitmap, (unsigned char*)"BM");
+    memset(&dest_bitmap[0], 0x42, 1);
+    memset(&dest_bitmap[1], 0x4d, 1);
+    memset(&dest_bitmap[2], BMP_FILE_SIZE, 1);
+    memset(&dest_bitmap[10], HEADER_OFFSET, 1);
+    memset(&dest_bitmap[14], (int)40, 1);
+    memset(&dest_bitmap[18], (int)88, 1);
+	memset(&dest_bitmap[19], (int)2, 1);
+    memset(&dest_bitmap[22], HEIGHT, 1);
+    memset(&dest_bitmap[26], (short)1, 1);
+    memset(&dest_bitmap[28], (short)24, 1); // 24bit
+    memset(&dest_bitmap[34], IMAGE_SIZE, 1);
+    
+    // make whole image white
+    memset(&dest_bitmap[54], 0xff, IMAGE_SIZE);
+
     int narrowest_bar_width = 1;
     char text_to_encode[40] = "213700";
     int res = encode128(dest_bitmap, narrowest_bar_width, text_to_encode);
-    printf("Digits: \n");
     printf("%d \n", res);
-    // printf("%d \n", *(res+1));
-    // printf("%d \n", *(res+2));
 
+    FILE *fp = fopen("output.bmp", "wb");
+    fwrite(dest_bitmap, 1, BMP_FILE_SIZE, fp);
+    fclose(fp);
+
+    free(dest_bitmap);
 
     // // Read the width in pixels of narrowest bar
     // int narrowest_bar_width = 1;

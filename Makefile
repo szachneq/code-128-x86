@@ -2,7 +2,7 @@ EXEFILE = main
 OBJECTS = main.o encode128.o
 CCFMT = -m32
 NASMFMT = -f elf32
-CCOPT = -m32 -c
+CCOPT = -m32 -c -Wall -Wextra
 NASMOPT = -w+all
 
 .c.o:
