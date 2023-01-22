@@ -219,7 +219,7 @@ end_parse_loop:
     mov     edi, 0
 input_loop:
     cmp     edi, ebx
-    jae      end_code_loop
+    jae     end_code_loop
 
     movzx   edx, byte [values+edi]
     push    edx
@@ -238,9 +238,37 @@ input_loop:
     jmp     input_loop
 end_code_loop:
 
+    mov     edi, 1
+    mov     ecx, START_SYMBOL
 checksum_loop:
+    cmp     edi, ebx
+    ja      end_checksum_loop
 
+    ; movzx   edx, byte [values+edi]
+    movzx   eax, byte [values+edi-1]
+    mul     edi
+    add     ecx, eax
+
+    inc     edi
+    jmp     checksum_loop
 end_checksum_loop:
+
+    mov     eax, ecx
+    mov     edx, 0
+    mov     ebx, 103
+    div     ebx
+
+    push    edx
+    call    decode_symbol
+    add     esp, 4
+
+    push    dword [ebp+8]
+    push    dword [ebp+12]
+    push    esi
+    call    draw_code
+    add     esp, 12
+
+    mov     esi, eax
 
     push    STOP_SYMBOL
     call    decode_symbol
@@ -252,7 +280,7 @@ end_checksum_loop:
     call    draw_code
     add     esp, 12
     
-    mov     eax, 0 ; Return without errors
+    mov     eax, edx ; Return without errors
 
 fin:
     pop     edi

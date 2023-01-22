@@ -36,8 +36,8 @@ int main() {
     // make whole image white
     memset(&dest_bitmap[54], 0xff, IMAGE_SIZE);
 
-    int narrowest_bar_width = 1;
-    char text_to_encode[40] = "00";
+    int narrowest_bar_width = 2;
+    char text_to_encode[40] = "0001020304050607080900";
     int res = encode128(dest_bitmap, narrowest_bar_width, text_to_encode);
     printf("%d \n", res);
 
