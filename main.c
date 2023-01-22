@@ -37,7 +37,7 @@ int main() {
     memset(&dest_bitmap[54], 0xff, IMAGE_SIZE);
 
     int narrowest_bar_width = 1;
-    char text_to_encode[40] = "213700";
+    char text_to_encode[40] = "00";
     int res = encode128(dest_bitmap, narrowest_bar_width, text_to_encode);
     printf("%d \n", res);
 

@@ -4,11 +4,7 @@
 ; # project: Code 128 - barcode generation, set C #
 ; #-----------------------------------------------#
 
-extern  printf
-
         section .data ; This data is initialized, but can be modified.
-    fmt:    db "%d", 10, 0
-    ; test:   times 4 db 0xab
     ERROR_INVALID_INPUT: equ 1
 
     WIDTH:              equ 600
@@ -202,41 +198,61 @@ parse_loop:
 
 end_parse_loop:
 
-    ; example use of decode_symbol
-    ; push    STOP_SYMBOL
-    ; call    decode_symbol
-    ; add     esp, 4
-    ; movzx   eax, byte [print_buffer+6]
+    ; calculate quiet zone
+    mov     esi, 10
+    mov     eax, [ebp+12]
+    mul     esi
+    mov     esi, eax ; starting width
 
-    ; push    dword [ebp+8]
-    ; push    5
-    ; push    5
-    ; call    set_pixel
-    ; add     esp, 12
-
-    ; push    dword [ebp+8]
-    ; push    5
-    ; call    draw_line
-    ; add     esp, 8
-
-; void draw_bar(int x, int width, unsigned char *dest_bitmap)
-    ; push    dword [ebp+8]
-    ; push    2
-    ; push    100
-    ; call    draw_bar
-    ; add     esp, 12
-
-    push    0
+    push    START_SYMBOL
     call    decode_symbol
     add     esp, 4
-    ; int draw_code(int x, int min_width, unsigned char *dest_bitmap)
+
     push    dword [ebp+8]
-    push    1
-    push    20
+    push    dword [ebp+12]
+    push    esi
+    call    draw_code
+    add     esp, 12
+
+    mov     esi, eax
+
+    mov     edi, 0
+input_loop:
+    cmp     edi, ebx
+    jae      end_code_loop
+
+    movzx   edx, byte [values+edi]
+    push    edx
+    call    decode_symbol
+    add     esp, 4
+
+    push    dword [ebp+8]
+    push    dword [ebp+12]
+    push    esi
+    call    draw_code
+    add     esp, 12
+
+    mov     esi, eax
+
+    inc     edi
+    jmp     input_loop
+end_code_loop:
+
+checksum_loop:
+
+end_checksum_loop:
+
+    push    STOP_SYMBOL
+    call    decode_symbol
+    add     esp, 4
+
+    push    dword [ebp+8]
+    push    dword [ebp+12]
+    push    esi
     call    draw_code
     add     esp, 12
     
-    ; mov     eax, 0 ; Return without errors
+    mov     eax, 0 ; Return without errors
 
 fin:
     pop     edi
@@ -335,10 +351,6 @@ draw_code_loop:
     je      space
 
     bar:
-    push    edi
-    push    dword fmt	; address of ctrl string
-    call    printf		; Call C function
-    add     esp, 8
     ; void draw_bar(int x, int width, unsigned char *dest_bitmap)
     push    dword [ebp+16]
     push    edi
