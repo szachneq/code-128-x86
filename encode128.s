@@ -4,7 +4,10 @@
 ; # project: Code 128 - barcode generation, set C #
 ; #-----------------------------------------------#
 
+extern  printf
+
         section .data ; This data is initialized, but can be modified.
+    fmt:    db "%d", 10, 0
     ; test:   times 4 db 0xab
     ERROR_INVALID_INPUT: equ 1
 
@@ -217,13 +220,23 @@ end_parse_loop:
     ; add     esp, 8
 
 ; void draw_bar(int x, int width, unsigned char *dest_bitmap)
+    ; push    dword [ebp+8]
+    ; push    2
+    ; push    100
+    ; call    draw_bar
+    ; add     esp, 12
+
+    push    0
+    call    decode_symbol
+    add     esp, 4
+    ; int draw_code(int x, int min_width, unsigned char *dest_bitmap)
     push    dword [ebp+8]
-    push    50
-    push    100
-    call    draw_bar
+    push    1
+    push    20
+    call    draw_code
     add     esp, 12
     
-    mov     eax, 0 ; Return without errors
+    ; mov     eax, 0 ; Return without errors
 
 fin:
     pop     edi
@@ -291,6 +304,72 @@ decode_symbol_fin:
 
 
 
+; int draw_code(int x, int min_width, unsigned char *dest_bitmap)
+; load code from print_buffer and print it
+; return new current x position
+draw_code:
+    push    ebp
+    mov     ebp, esp
+
+    push    ebx
+    push    ecx
+    push    edx
+    push    esi
+    push    edi
+draw_code_main:
+    mov     ebx, 0
+    mov     esi, [ebp+8] ; current x position
+draw_code_loop:
+    cmp     ebx, 7
+    jae     end_draw_code_loop
+
+    movzx   eax, byte [print_buffer+ebx] ; width decoded from patterns
+    mov     ecx, [ebp+12] ; min_width
+    mul     ecx ; bar width = decoded_width * min_bar_width
+    mov     edi, eax
+
+    mov     edx, 1
+    and     edx, ebx ; check if loop counter is odd or even
+
+    cmp     edx, 1
+    je      space
+
+    bar:
+    push    edi
+    push    dword fmt	; address of ctrl string
+    call    printf		; Call C function
+    add     esp, 8
+    ; void draw_bar(int x, int width, unsigned char *dest_bitmap)
+    push    dword [ebp+16]
+    push    edi
+    push    esi
+    call    draw_bar
+    add     esp, 12
+
+    space:
+    add     esi, edi
+
+    continue:
+    inc     ebx
+    jmp     draw_code_loop
+
+end_draw_code_loop:
+
+    mov     eax, esi
+
+draw_code_fin:
+    pop     edi
+    pop     esi
+    pop     edx
+    pop     ecx
+    pop     ebx
+
+    pop     ebp
+
+    ret
+
+
+
 ; void draw_bar(int x, int width, unsigned char *dest_bitmap)
 draw_bar:
     push    ebp
@@ -306,8 +385,8 @@ draw_bar_main:
     mov     esi, [ebp+8] ; x position
 draw_bar_loop:
 ; void draw_line(int x, unsigned char *dest_bitmap)
-    cmp     ecx, [ebp+12]      ; while (counter < width)
-    ja      end_draw_bar_loop
+    cmp     ecx, [ebp+12]      ; while (counter <= width)
+    jae     end_draw_bar_loop
     push    dword [ebp+16] ; *dest_bitmap
     push    esi  ; x position
     call    draw_line
