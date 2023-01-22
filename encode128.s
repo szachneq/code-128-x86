@@ -280,7 +280,7 @@ end_checksum_loop:
     call    draw_code
     add     esp, 12
     
-    mov     eax, edx ; Return without errors
+    mov     eax, 0 ; Return without errors
 
 fin:
     pop     edi
