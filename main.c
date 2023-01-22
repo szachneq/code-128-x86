@@ -21,7 +21,6 @@ int main() {
     unsigned char *dest_bitmap = (unsigned char *)calloc(BMP_FILE_SIZE, sizeof(unsigned char));
 
     // BMP File header
-    // strcpy(dest_bitmap, (unsigned char*)"BM");
     memset(&dest_bitmap[0], 0x42, 1);
     memset(&dest_bitmap[1], 0x4d, 1);
     memset(&dest_bitmap[2], BMP_FILE_SIZE, 1);
